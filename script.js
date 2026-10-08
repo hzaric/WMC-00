@@ -4,7 +4,7 @@ const CATEGORY_URL = "https://opentdb.com/api_category.php";
 let currentQuestion = null;
 let score = 0;
 
-// HTML-Elemente holen
+// HTML-Elemente auswählen
 const questionElement = document.getElementById("question");
 const answersElement = document.getElementById("answers");
 const resultElement = document.getElementById("result");
@@ -14,93 +14,60 @@ const highscoresElement = document.getElementById("highscores");
 const saveButton = document.getElementById("saveButton");
 
 
-// Kategorien laden
 loadCategories();
-
-// Erste Frage laden
 loadQuestion();
-
-// Highscores anzeigen
 displayHighscores();
 
-// --------------------------------------------------
-// FRAGE LADEN
-// --------------------------------------------------
-
+// Lädt eine Frage aus der API.
 function loadQuestion() {
-  resultElement.textContent = "";
-  answersElement.innerHTML = "";
+  resultElement.textContent = ""; // entfernen der alten Ergebnisse
+  answersElement.innerHTML = ""; // entfernen der alten Antwort
 
   let url = API_URL;
 
-  // Falls eine Kategorie ausgewählt wurde  BONUS!!!
+  // Hängt die ausgewählte Kategorie an die Anfrage an.
   if (categoryElement.value !== "") {
     url += "&category=" + categoryElement.value;
   }
 
-  fetch(url)
-    .then((response) => response.json())
-    .then((data) => {
+  fetch(url).then((response) => response.json()) .then((data) => {
       currentQuestion = data.results[0];
-
       displayQuestion();
     })
     .catch((error) => {
       console.error("Fehler:", error);
-
       questionElement.textContent = "Die Frage konnte nicht geladen werden.";
     });
 }
 
-// --------------------------------------------------
-// FRAGE ANZEIGEN
-// --------------------------------------------------
-
+// Zeigt die Frage und ihre Antworten an.
 function displayQuestion() {
   questionElement.innerHTML = currentQuestion.question;
-
-  answersElement.innerHTML = "";
-
-  // Richtige + falsche Antworten zusammenfügen
+  answersElement.innerHTML = ""; // entfernen der alten Antworten
+  // Fügt richtige und falsche Antworten zusammen.
   const answers = [
     currentQuestion.correct_answer,
     ...currentQuestion.incorrect_answers,
   ];
-
-  // Antworten mischen
   shuffle(answers);
-
-  // Für jede Antwort einen Button erstellen
+  // Erstellt für jede Antwort einen Button.
   answers.forEach((answer) => {
     const button = document.createElement("button");
-
     button.classList.add("answer-button");
-
     button.innerHTML = answer;
-
-    button.addEventListener("click", function () {
-      checkAnswer(answer, button);
-    });
-
+    button.addEventListener("click", () => checkAnswer(answer));
     answersElement.appendChild(button);
   });
 }
 
-// --------------------------------------------------
-// ANTWORT ÜBERPRÜFEN
-// --------------------------------------------------
-
-function checkAnswer(answer, clickedButton) {
-  // Alle Buttons deaktivieren
+// Prüft die Antwort und sperrt alle Antwort-Buttons.
+function checkAnswer(answer) {
   const buttons = document.querySelectorAll(".answer-button");
-
   buttons.forEach((button) => {
     button.disabled = true;
   });
-
   if (answer === currentQuestion.correct_answer) {
     resultElement.textContent = "Richtig!";
-
     score++;
   } else {
     resultElement.textContent =
@@ -108,41 +75,22 @@ function checkAnswer(answer, clickedButton) {
   }
 }
 
-// --------------------------------------------------
-// NÄCHSTE FRAGE
-// --------------------------------------------------
-
-nextButton.addEventListener("click", function () {
-  loadQuestion();
-});
-
-// --------------------------------------------------
-// ANTWORTEN MISCHEN
-// --------------------------------------------------
-
+nextButton.addEventListener("click", loadQuestion);
+// Mischt die Antworten zufällig.
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-
     [array[i], array[j]] = [array[j], array[i]];
   }
 }
 
-// --------------------------------------------------
-// KATEGORIEN LADEN
-// --------------------------------------------------
-
+// Lädt die Kategorien aus der API.
 function loadCategories() {
-  fetch(CATEGORY_URL)
-    .then((response) => response.json())
-    .then((data) => {
+  fetch(CATEGORY_URL).then((response) => response.json()).then((data) => {
       data.trivia_categories.forEach((category) => {
         const option = document.createElement("option");
-
         option.value = category.id;
-
         option.textContent = category.name;
-
         categoryElement.appendChild(option);
       });
     })
@@ -151,61 +99,33 @@ function loadCategories() {
     });
 }
 
-// --------------------------------------------------
-// KATEGORIE GEÄNDERT
-// --------------------------------------------------
-
-categoryElement.addEventListener("change", function () {
+categoryElement.addEventListener("change", () => {
   score = 0;
-
   loadQuestion();
 });
 
-// --------------------------------------------------
-// HIGHSCORE SPEICHERN
-// --------------------------------------------------
-
 saveButton.addEventListener("click", saveHighscore);
+// Speichert den Punktestand im Browser.
 function saveHighscore() {
   const name = prompt("Dein Name:");
-
   if (name === null || name.trim() === "") {
     return;
   }
-
   const highscores = JSON.parse(localStorage.getItem("highscores")) || [];
-
-  const newScore = {
-    name: name,
-
-    score: score,
-  };
-
+  const newScore = { name: name.trim(), score };
   highscores.push(newScore);
-
-  highscores.sort(function (a, b) {
-    return b.score - a.score;
-  });
-
+  highscores.sort((a, b) => b.score - a.score);
   localStorage.setItem("highscores", JSON.stringify(highscores));
-
   displayHighscores();
 }
 
-// --------------------------------------------------
-// HIGHSCORES ANZEIGEN
-// --------------------------------------------------
-
+// Zeigt gespeicherte Punktestände an.
 function displayHighscores() {
   const highscores = JSON.parse(localStorage.getItem("highscores")) || [];
-
-  highscoresElement.innerHTML = "";
-
+  highscoresElement.innerHTML = ""; 
   highscores.forEach(function (entry) {
     const li = document.createElement("li");
-
     li.textContent = entry.name + " - " + entry.score + " Punkte";
-
     highscoresElement.appendChild(li);
   });
 }
